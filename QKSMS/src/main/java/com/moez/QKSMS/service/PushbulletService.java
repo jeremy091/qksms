@@ -1,8 +1,10 @@
 package com.moez.QKSMS.service;
 
+import android.util.Log;
+
+import com.moez.QKSMS.data.ConversationLegacy;
 import com.moez.QKSMS.mmssms.Message;
 import com.moez.QKSMS.mmssms.Transaction;
-import com.moez.QKSMS.data.ConversationLegacy;
 import com.moez.QKSMS.transaction.NotificationManager;
 import com.moez.QKSMS.transaction.SmsHelper;
 import com.moez.QKSMS.ui.popup.QKReplyActivity;
@@ -13,8 +15,11 @@ public class PushbulletService extends MessagingExtension {
 
     @Override
     protected void onMessageReceived(String conversationIden, String body) {
+        Log.v(TAG, "onMessageReceived");
+
         long threadId = Long.parseLong(conversationIden);
         ConversationLegacy conversation = new ConversationLegacy(getApplicationContext(), threadId);
+        conversation.markRead();
 
         Transaction sendTransaction = new Transaction(getApplicationContext(), SmsHelper.getSendSettings(getApplicationContext()));
         Message message = new com.moez.QKSMS.mmssms.Message(body, conversation.getAddress());
@@ -30,6 +35,8 @@ public class PushbulletService extends MessagingExtension {
 
     @Override
     protected void onConversationDismissed(String conversationIden) {
+        Log.v(TAG, "onConversationDismissed");
+
         long threadId = Long.parseLong(conversationIden);
         ConversationLegacy conversation = new ConversationLegacy(getApplicationContext(), threadId);
         conversation.markRead();
