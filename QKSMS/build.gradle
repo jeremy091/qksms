@@ -92,10 +92,11 @@ dependencies {
     compile 'org.ligi:snackengage:0.4'
 
     // Google libraries
-    compile 'com.android.support:appcompat-v7:22.2.1'
-    compile 'com.android.support:support-v13:22.2.1'
-    compile 'com.android.support:recyclerview-v7:22.2.1'
-    withAnalyticsCompile 'com.google.android.gms:play-services-analytics:7.5.0'
+    compile 'com.android.support:appcompat-v7:23.1.0'
+    compile 'com.android.support:support-v13:23.1.0'
+    compile 'com.android.support:recyclerview-v7:23.1.0'
+    withAnalyticsCompile 'com.google.android.gms:play-services-analytics:8.1.0'
+
     // External services
     withAnalyticsCompile 'com.crittercism:crittercism-android-agent:5.0.3'
 }
