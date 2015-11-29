@@ -64,6 +64,7 @@ import com.moez.QKSMS.data.Contact;
 import com.moez.QKSMS.data.ContactList;
 import com.moez.QKSMS.data.Conversation;
 import com.moez.QKSMS.data.ConversationLegacy;
+import com.moez.QKSMS.data.ConversationQueryHandler;
 import com.moez.QKSMS.data.Message;
 import com.moez.QKSMS.interfaces.ActivityLauncher;
 import com.moez.QKSMS.model.SlideshowModel;
@@ -1308,7 +1309,7 @@ public class MessageListFragment extends QKContentFragment implements ActivityLa
         }
     }
 
-    private final class BackgroundQueryHandler extends Conversation.ConversationQueryHandler {
+    private final class BackgroundQueryHandler extends ConversationQueryHandler {
         public BackgroundQueryHandler(ContentResolver contentResolver) {
             super(contentResolver);
         }

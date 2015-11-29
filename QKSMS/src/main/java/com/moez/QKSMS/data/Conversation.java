@@ -17,6 +17,7 @@ import android.provider.Telephony.Sms;
 import android.provider.Telephony.Sms.Conversations;
 import android.provider.Telephony.Threads;
 import android.provider.Telephony.ThreadsColumns;
+import android.support.annotation.NonNull;
 import android.text.TextUtils;
 import android.util.Log;
 
@@ -44,6 +45,10 @@ import java.util.Set;
  * An interface for finding information about conversations and/or creating new ones.
  */
 public class Conversation {
+
+
+
+
     private static final String TAG = "Mms/conv";
     private static final boolean DEBUG = false;
     private static final boolean DELETEDEBUG = false;
@@ -98,6 +103,31 @@ public class Conversation {
 
     private static ContentValues sReadContentValues;
     private static boolean sLoadingThreads;
+
+    public long getmThreadId() {
+        return mThreadId;
+    }
+
+    public static boolean isDEBUG() {
+        return DEBUG;
+    }
+
+    public static String getTAG() {
+        return TAG;
+    }
+
+    public static boolean issDeletingThreads() {
+        return sDeletingThreads;
+    }
+
+    public static Object getsDeletingThreadsLock() {
+        return sDeletingThreadsLock;
+    }
+
+    public static boolean isDELETEDEBUG() {
+        return DELETEDEBUG;
+    }
+
     private static boolean sDeletingThreads;
     private static Object sDeletingThreadsLock = new Object();
     private boolean mMarkAsReadBlocked;
@@ -608,16 +638,8 @@ public class Conversation {
     }
 
     private static long getOrCreateThreadId(Context context, ContactList list) {
-        HashSet<String> recipients = new HashSet<>();
-        Contact cacheContact = null;
-        for (Contact c : list) {
-            cacheContact = Contact.get(c.getNumber(), false);
-            if (cacheContact != null) {
-                recipients.add(cacheContact.getNumber());
-            } else {
-                recipients.add(c.getNumber());
-            }
-        }
+        //Extracted method convertContactListToHashSet(ContactList)
+        HashSet<String> recipients = convertContactListToHashSet(list);
         synchronized (sDeletingThreadsLock) {
             if (DELETEDEBUG) {
                 Log.d(TAG, "Conversation getOrCreateThreadId for: " + list.formatNamesAndNumbers(",") + " sDeletingThreads: " + sDeletingThreads);
@@ -646,6 +668,21 @@ public class Conversation {
         }
     }
 
+    @NonNull
+    private static HashSet<String> convertContactListToHashSet(ContactList list) {
+        HashSet<String> recipients = new HashSet<>();
+        Contact cacheContact = null;
+        for (Contact c : list) {
+            cacheContact = Contact.get(c.getNumber(), false);
+            if (cacheContact != null) {
+                recipients.add(cacheContact.getNumber());
+            } else {
+                recipients.add(c.getNumber());
+            }
+        }
+        return recipients;
+    }
+/*
     public static long getOrCreateThreadId(Context context, String address) {
         synchronized (sDeletingThreadsLock) {
             if (DELETEDEBUG) {
@@ -673,7 +710,7 @@ public class Conversation {
             }
             return retVal;
         }
-    }
+    }*/
 
     /*
      * The primary key of a conversation is its recipient set; override
@@ -810,34 +847,6 @@ public class Conversation {
         }
     }
 
-    public static class ConversationQueryHandler extends AsyncQueryHandler {
-        private int mDeleteToken;
-
-        public ConversationQueryHandler(ContentResolver cr) {
-            super(cr);
-        }
-
-        public void setDeleteToken(int token) {
-            mDeleteToken = token;
-        }
-
-        /**
-         * Always call this super method from your overridden onDeleteComplete function.
-         */
-        @Override
-        protected void onDeleteComplete(int token, Object cookie, int result) {
-            if (token == mDeleteToken) {
-                // release lock
-                synchronized (sDeletingThreadsLock) {
-                    sDeletingThreads = false;
-                    if (DELETEDEBUG) {
-                        Log.v(TAG, "Conversation onDeleteComplete sDeletingThreads: " + sDeletingThreads);
-                    }
-                    sDeletingThreadsLock.notifyAll();
-                }
-            }
-        }
-    }
 
     /**
      * Check for locked messages in all threads or a specified thread.
@@ -926,163 +935,6 @@ public class Conversation {
 
         if (Log.isLoggable(LogTag.THREAD_CACHE, Log.VERBOSE)) {
             Log.d(TAG, "fillFromCursor: conv=" + conv + ", recipientIds=" + recipientIds);
-        }
-    }
-
-    /**
-     * Private cache for the use of the various forms of Conversation.get.
-     */
-    private static class Cache {
-        private static Cache sInstance = new Cache();
-
-        static Cache getInstance() {
-            return sInstance;
-        }
-
-        private final HashSet<Conversation> mCache;
-
-        private Cache() {
-            mCache = new HashSet<Conversation>(10);
-        }
-
-        /**
-         * Return the conversation with the specified thread ID, or
-         * null if it's not in cache.
-         */
-        static Conversation get(long threadId) {
-            synchronized (sInstance) {
-                if (Log.isLoggable(LogTag.THREAD_CACHE, Log.VERBOSE)) {
-                    LogTag.debug("Conversation get with threadId: " + threadId);
-                }
-                for (Conversation c : sInstance.mCache) {
-                    if (DEBUG) {
-                        LogTag.debug("Conversation get() threadId: " + threadId +
-                                " c.getThreadId(): " + c.getThreadId());
-                    }
-                    if (c.getThreadId() == threadId) {
-                        return c;
-                    }
-                }
-            }
-            return null;
-        }
-
-        /**
-         * Return the conversation with the specified recipient
-         * list, or null if it's not in cache.
-         */
-        static Conversation get(ContactList list) {
-            synchronized (sInstance) {
-                if (Log.isLoggable(LogTag.THREAD_CACHE, Log.VERBOSE)) {
-                    LogTag.debug("Conversation get with ContactList: " + list);
-                }
-                for (Conversation c : sInstance.mCache) {
-                    if (c.getRecipients().equals(list)) {
-                        return c;
-                    }
-                }
-            }
-            return null;
-        }
-
-        /**
-         * Put the specified conversation in the cache.  The caller
-         * should not place an already-existing conversation in the
-         * cache, but rather update it in place.
-         */
-        static void put(Conversation c) {
-            synchronized (sInstance) {
-                // We update cache entries in place so people with long-
-                // held references get updated.
-                if (Log.isLoggable(LogTag.THREAD_CACHE, Log.VERBOSE)) {
-                    Log.d(TAG, "Conversation.Cache.put: conv= " + c + ", hash: " + c.hashCode());
-                }
-
-                if (sInstance.mCache.contains(c)) {
-                    if (DEBUG) {
-                        dumpCache();
-                    }
-                    throw new IllegalStateException("cache already contains " + c +
-                            " threadId: " + c.mThreadId);
-                }
-                sInstance.mCache.add(c);
-            }
-        }
-
-        /**
-         * Replace the specified conversation in the cache. This is used in cases where we
-         * lookup a conversation in the cache by threadId, but don't find it. The caller
-         * then builds a new conversation (from the cursor) and tries to add it, but gets
-         * an exception that the conversation is already in the cache, because the hash
-         * is based on the recipients and it's there under a stale threadId. In this function
-         * we remove the stale entry and add the new one. Returns true if the operation is
-         * successful
-         */
-        static boolean replace(Conversation c) {
-            synchronized (sInstance) {
-                if (Log.isLoggable(LogTag.THREAD_CACHE, Log.VERBOSE)) {
-                    LogTag.debug("Conversation.Cache.put: conv= " + c + ", hash: " + c.hashCode());
-                }
-
-                if (!sInstance.mCache.contains(c)) {
-                    if (DEBUG) {
-                        dumpCache();
-                    }
-                    return false;
-                }
-                // Here it looks like we're simply removing and then re-adding the same object
-                // to the hashset. Because the hashkey is the conversation's recipients, and not
-                // the thread id, we'll actually remove the object with the stale threadId and
-                // then add the the conversation with updated threadId, both having the same
-                // recipients.
-                sInstance.mCache.remove(c);
-                sInstance.mCache.add(c);
-                return true;
-            }
-        }
-
-        static void remove(long threadId) {
-            synchronized (sInstance) {
-                if (DEBUG) {
-                    LogTag.debug("remove threadid: " + threadId);
-                    dumpCache();
-                }
-                for (Conversation c : sInstance.mCache) {
-                    if (c.getThreadId() == threadId) {
-                        sInstance.mCache.remove(c);
-                        return;
-                    }
-                }
-            }
-        }
-
-        static void dumpCache() {
-            synchronized (sInstance) {
-                LogTag.debug("Conversation dumpCache: ");
-                for (Conversation c : sInstance.mCache) {
-                    LogTag.debug("   conv: " + c.toString() + " hash: " + c.hashCode());
-                }
-            }
-        }
-
-        /**
-         * Remove all conversations from the cache that are not in
-         * the provided set of thread IDs.
-         */
-        static void keepOnly(Set<Long> threads) {
-            synchronized (sInstance) {
-                Iterator<Conversation> iter = sInstance.mCache.iterator();
-                while (iter.hasNext()) {
-                    Conversation c = iter.next();
-                    if (!threads.contains(c.getThreadId())) {
-                        iter.remove();
-                    }
-                }
-            }
-            if (DEBUG) {
-                LogTag.debug("after keepOnly");
-                dumpCache();
-            }
         }
     }
 
@@ -1459,5 +1311,159 @@ public class Conversation {
                     " recipient from DB: " + address);
         }
         return address;
+    }
+
+    private static class Cache {
+        private static Cache sInstance = new Cache();
+
+        static Cache getInstance() {
+            return sInstance;
+        }
+
+        private final HashSet<Conversation> mCache;
+
+        private Cache() {
+            mCache = new HashSet<Conversation>(10);
+        }
+
+        /**
+         * Return the conversation with the specified thread ID, or
+         * null if it's not in cache.
+         */
+        static Conversation get(long threadId) {
+            synchronized (sInstance) {
+                if (Log.isLoggable(LogTag.THREAD_CACHE, Log.VERBOSE)) {
+                    LogTag.debug("Conversation get with threadId: " + threadId);
+                }
+                for (Conversation c : sInstance.mCache) {
+                    if (Conversation.DEBUG) {
+                        LogTag.debug("Conversation get() threadId: " + threadId +
+                                " c.getThreadId(): " + c.getThreadId());
+                    }
+                    if (c.getThreadId() == threadId) {
+                        return c;
+                    }
+                }
+            }
+            return null;
+        }
+
+        /**
+         * Return the conversation with the specified recipient
+         * list, or null if it's not in cache.
+         */
+        static Conversation get(ContactList list) {
+            synchronized (sInstance) {
+                if (Log.isLoggable(LogTag.THREAD_CACHE, Log.VERBOSE)) {
+                    LogTag.debug("Conversation get with ContactList: " + list);
+                }
+                for (Conversation c : sInstance.mCache) {
+                    if (c.getRecipients().equals(list)) {
+                        return c;
+                    }
+                }
+            }
+            return null;
+        }
+
+        /**
+         * Put the specified conversation in the cache.  The caller
+         * should not place an already-existing conversation in the
+         * cache, but rather update it in place.
+         */
+        static void put(Conversation c) {
+            synchronized (sInstance) {
+                // We update cache entries in place so people with long-
+                // held references get updated.
+                if (Log.isLoggable(LogTag.THREAD_CACHE, Log.VERBOSE)) {
+                    Log.d(Conversation.TAG, "Conversation.Cache.put: conv= " + c + ", hash: " + c.hashCode());
+                }
+
+                if (sInstance.mCache.contains(c)) {
+                    if (Conversation.DEBUG) {
+                        dumpCache();
+                    }
+                    throw new IllegalStateException("cache already contains " + c +
+                            " threadId: " + c.mThreadId);
+                }
+                sInstance.mCache.add(c);
+            }
+        }
+
+        /**
+         * Replace the specified conversation in the cache. This is used in cases where we
+         * lookup a conversation in the cache by threadId, but don't find it. The caller
+         * then builds a new conversation (from the cursor) and tries to add it, but gets
+         * an exception that the conversation is already in the cache, because the hash
+         * is based on the recipients and it's there under a stale threadId. In this function
+         * we remove the stale entry and add the new one. Returns true if the operation is
+         * successful
+         */
+        static boolean replace(Conversation c) {
+            synchronized (sInstance) {
+                if (Log.isLoggable(LogTag.THREAD_CACHE, Log.VERBOSE)) {
+                    LogTag.debug("Conversation.Cache.put: conv= " + c + ", hash: " + c.hashCode());
+                }
+
+                if (!sInstance.mCache.contains(c)) {
+                    if (Conversation.DEBUG) {
+                        dumpCache();
+                    }
+                    return false;
+                }
+                // Here it looks like we're simply removing and then re-adding the same object
+                // to the hashset. Because the hashkey is the conversation's recipients, and not
+                // the thread id, we'll actually remove the object with the stale threadId and
+                // then add the the conversation with updated threadId, both having the same
+                // recipients.
+                sInstance.mCache.remove(c);
+                sInstance.mCache.add(c);
+                return true;
+            }
+        }
+
+        static void remove(long threadId) {
+            synchronized (sInstance) {
+                if (Conversation.DEBUG) {
+                    LogTag.debug("remove threadid: " + threadId);
+                    dumpCache();
+                }
+                for (Conversation c : sInstance.mCache) {
+                    if (c.getThreadId() == threadId) {
+                        sInstance.mCache.remove(c);
+                        return;
+                    }
+                }
+            }
+        }
+
+        static void dumpCache() {
+            synchronized (sInstance) {
+                LogTag.debug("Conversation dumpCache: ");
+                for (Conversation c : sInstance.mCache) {
+                    LogTag.debug("   conv: " + c.toString() + " hash: " + c.hashCode());
+                }
+            }
+        }
+
+        /**
+         * Remove all conversations from the cache that are not in
+         * the provided set of thread IDs.
+         */
+        static void keepOnly(Set<Long> threads) {
+            synchronized (sInstance) {
+                Iterator<Conversation> iter = sInstance.mCache.iterator();
+                while (iter.hasNext()) {
+                    Conversation c = iter.next();
+                    if (!threads.contains(c.getThreadId())) {
+                        iter.remove();
+                    }
+                }
+            }
+            if (Conversation.DEBUG) {
+                LogTag.debug("after keepOnly");
+                dumpCache();
+            }
+        }
     }
 }
