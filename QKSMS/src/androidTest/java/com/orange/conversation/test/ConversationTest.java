@@ -15,6 +15,12 @@ import com.moez.QKSMS.data.ConversationQueryHandler;
 import java.util.ArrayList;
 import java.util.Collection;
 
+import android.content.Context;
+
+import com.moez.QKSMS.data.ContactList;
+import com.moez.QKSMS.data.Conversation;
+
+
 
 public class ConversationTest extends AndroidTestCase {
 
