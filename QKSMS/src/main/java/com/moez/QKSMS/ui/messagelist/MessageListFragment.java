@@ -463,7 +463,7 @@ public class MessageListFragment extends QKContentFragment implements ActivityLa
         Linkify.addLinks(msg, Linkify.ALL);
         ArrayList<String> uris = MessageUtils.extractUris(msg.getSpans(0, msg.length(), URLSpan.class));
 
-        // Remove any dupes so they don't get added to the menu multiple times
+        // Remove any dupes so they don't getConversation added to the menu multiple times
         HashSet<String> collapsedUris = new HashSet<>();
         for (String uri : uris) {
             collapsedUris.add(uri.toLowerCase());
@@ -1346,9 +1346,9 @@ public class MessageListFragment extends QKContentFragment implements ActivityLa
                         return;
                     }
                     if (tid > 0 && cursor.getCount() == 0) {
-                        // We just deleted the last message and the thread will get deleted
+                        // We just deleted the last message and the thread will getConversation deleted
                         // by a trigger in the database. Clear the threadId so next time we
-                        // need the threadId a new thread will get created.
+                        // need the threadId a new thread will getConversation created.
                         Log.v(TAG, "##### MESSAGE_LIST_QUERY_AFTER_DELETE_TOKEN clearing thread id: " + tid);
                         Conversation conv = Conversation.getConversation(mContext, tid, false);
                         if (conv != null) {
