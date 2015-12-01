@@ -1350,7 +1350,7 @@ public class MessageListFragment extends QKContentFragment implements ActivityLa
                         // by a trigger in the database. Clear the threadId so next time we
                         // need the threadId a new thread will get created.
                         Log.v(TAG, "##### MESSAGE_LIST_QUERY_AFTER_DELETE_TOKEN clearing thread id: " + tid);
-                        Conversation conv = Conversation.get(mContext, tid, false);
+                        Conversation conv = Conversation.getConversation(mContext, tid, false);
                         if (conv != null) {
                             conv.clearThreadId();
                             conv.setDraftState(false);
@@ -1419,7 +1419,7 @@ public class MessageListFragment extends QKContentFragment implements ActivityLa
         @Override
         protected Void doInBackground(Void... params) {
             Log.d(TAG, "Loading conversation");
-            mConversation = Conversation.get(mContext, mThreadId, true);
+            mConversation = Conversation.getConversation(mContext, mThreadId, true);
             mConversationLegacy = new ConversationLegacy(mContext, mThreadId);
 
             mConversationLegacy.markRead();

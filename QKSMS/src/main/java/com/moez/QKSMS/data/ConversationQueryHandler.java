@@ -5,20 +5,19 @@ import android.content.ContentResolver;
 import android.util.Log;
 
 /**
- * Created by Joseph on 2015-11-23.
+ * Created by IhceneCh on 2015-11-29.
  */
 public class ConversationQueryHandler extends AsyncQueryHandler {
-
-
     private int mDeleteToken;
 
     public ConversationQueryHandler(ContentResolver cr) {
         super(cr);
     }
-    public int getmDeleteToken() {
-        return mDeleteToken;
+
+    public int getmDeleteToken() { return mDeleteToken; }
+    public void setDeleteToken(int token) {
+        mDeleteToken = token;
     }
-    public void setDeleteToken(int token) { mDeleteToken = token; }
 
     /**
      * Always call this super method from your overridden onDeleteComplete function.

@@ -1,6 +1,7 @@
 package com.orange.conversation.test;
 
 
+import android.content.ContentResolver;
 import android.test.AndroidTestCase;
 import android.content.ContentResolver;
 import android.content.Context;
@@ -17,10 +18,13 @@ import java.util.Collection;
 
 import android.content.Context;
 
+import com.moez.QKSMS.common.google.DraftCache;
 import com.moez.QKSMS.data.Contact;
 import com.moez.QKSMS.data.ContactList;
 import com.moez.QKSMS.data.Conversation;
+import com.moez.QKSMS.data.ConversationQueryHandler;
 
+import java.util.ArrayList;
 
 
 public class ConversationTest extends AndroidTestCase {
@@ -34,7 +38,7 @@ public class ConversationTest extends AndroidTestCase {
         super.tearDown();
     }
 
-    public void testGetWithContactListNormalExecution() throws Exception {
+    public void testGetWithThreadIdNormalExecution() throws Exception {
         Context context = getContext();
         boolean allowQuery = true;
         long threadId = 0;
@@ -43,7 +47,7 @@ public class ConversationTest extends AndroidTestCase {
         // The threadId passed within Cache.getConversation(threadId) is set to null
         // Cache is a private inner class
         Conversation conv = Conversation.getConversation(context, threadId, allowQuery);
-        assertEquals(0,conv.getThreadId());
+        assertEquals(0, conv.getThreadId());
 
     }
 
@@ -64,17 +68,18 @@ public class ConversationTest extends AndroidTestCase {
 
     public void testGetWithContactListNormalExecution() throws Exception {
         Context context = getContext();
-
+        Contact.init(context);
         boolean allowQuery = true;
         long threadId = 0;
         ContactList testList  = new ContactList();
 
 
-        testList.add(Contact.get("tet", true));
+        testList.add(Contact.get("testJoeRefactoring", true));
 
         // The threadId passed within Cache.getConversation(threadId) is set to null
         // Cache is a private inner class
         Conversation conv = Conversation.getConversation(context, testList, allowQuery);
         assertEquals(0,conv.getThreadId());
     }
+
 }
